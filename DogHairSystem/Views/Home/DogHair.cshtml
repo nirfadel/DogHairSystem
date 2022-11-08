@@ -1,0 +1,184 @@
+﻿@model IEnumerable<DogHairCutModel>
+
+<div class="table-responsive">
+    <a class="btn btn-primary" id="btnAdd" onclick="showAddPopup()">Add</a>
+    <hr />
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th scope="col">Id</th>
+                <th scope="col">User id</th>
+                <th scope="col">First name</th>
+                <th scope="col">Due date</th>
+                <th>#</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var dgc in Model)
+            {
+                <tr>
+                    <td scope="col">@dgc.Id</td>
+                    <td scope="col">@dgc.UserId</td>
+                    <td scope="col"><a href="#" onclick="getDogHairDetails(@dgc.Id, '@dgc.FirstName')">@dgc.FirstName</a> </td>
+                    <td scope="col">@dgc.DueDate</td>
+                    <td class="text-center">
+                        @if(dgc.CanChange){
+                        <a class="btn btn-primary editBtn" onclick="showEditPopup(@dgc.Id, '@dgc.DueDate')">Edit</a>
+                        <a class="btn btn-danger deleteBtn" onclick="deleteDogHair(@dgc.Id)">Delete</a>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+<script>
+    
+        $('#dueDate').datepicker();
+    
+    function showAddPopup() {
+        clearForm();
+        $('#btn_update').hide();
+        $('#btn_save').show();
+        $("#MyPopup").modal('show');
+    }
+
+    function showEditPopup(id, date) {
+        clearForm();
+        $('#btn_update').show();
+        $('#btn_save').hide();
+        $('#dueDate').val(date);
+        $('#id_dogHair').val(id);
+        $("#MyPopup").modal('show');
+    }
+
+    function hidePopup() {
+        $(".close").click(function () {
+            $("#MyPopup").modal('hide');
+        });
+    }
+    async function deleteDogHair(id) {
+        const rawResponse = await fetch('/DogHair/DeleteHairCut?id=' + id, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+        });
+        const status = await rawResponse.status;
+        if (status === 200) {
+            $("#MyPopup").modal('hide');
+            location.reload();
+        }
+    }
+
+    async function updateDogHair() {
+        const id = $('#id_dogHair').val();
+        const dueDate = $('#dueDate').val();
+       
+        let dogHairCutModel = { Id: id, dueDate: new Date(dueDate).toISOString() };
+        const rawResponse = await fetch('/DogHair', {
+            method: 'Put',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dogHairCutModel)
+        });
+        const content = await rawResponse.json();
+        if (content != null) {
+            $("#MyPopup").modal('hide');
+            location.reload();
+        }
+    }
+
+    async function saveNewDogHair() {
+        const dueDate = $('#dueDate').val();
+        let dogHairCutModel = { dueDate: new Date(dueDate).toISOString() };
+        const rawResponse = await fetch('/DogHair', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dogHairCutModel)
+        });
+        const content = await rawResponse.status;
+        if (content != null) {
+            $("#MyPopup").modal('hide');
+            location.reload();
+        }
+
+    }
+
+    async function getDogHairDetails(id, firstName) {
+        const thisName = firstName;
+       
+        const rawResponse = await fetch('/DogHair/GetDogHairDetails?id=' + id, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
+        const content = await rawResponse.json();
+        if (content != null) {
+            $("#insertDate").val(content.insertDate);
+            $("#firstName").val(thisName);
+            $("#div_insertDate").show();
+            $("#div_firstName").show();
+            $("#dueDate").val(content.dueDate);
+            $("#dueDate").attr("readonly", true);
+            $("#btn_update").hide();
+            $("#btn_save").hide();
+            $("#MyPopup").modal('show');
+        }
+    }
+
+    function clearForm() {
+        $("#div_insertDate").hide();
+        $("#div_firstName").hide();
+        $("#dueDate").attr("readonly", false);
+    }
+
+
+</script>
+<div id="MyPopup" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    &times;
+                </button>
+                <input type="hidden" id="id_dogHair" />
+                <h4 class="modal-title title">Customer Details</h4>
+            </div>
+            <div class="modal-body">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group" id="div_firstName">
+                                First Name: <input id="firstName" type="text" class="form-control" readonly="readonly"/>
+                            </div>
+                            <div class="form-group">
+                                Due date: <input id="dueDate" type="text" class="form-control" />
+                            </div>
+                            <div class="form-group" id="div_insertDate">
+                                Insert Date: <input id="insertDate" type="text" class="form-control" readonly="readonly"/>
+                            </div>
+
+                            <div class="form-group">
+                                <button type="button" onclick="updateDogHair()" id="btn_update" class="btn btn-success btn-sm">Update</button>
+                                <button type="button" onclick="saveNewDogHair()" id="btn_save" class="btn btn-success btn-sm">Save</button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <input type="button" id="btnClosePopup" value="Close" data-dismiss="modal" class="btn btn-danger close" />
+            </div>
+        </div>
+    </div>
+</div>
